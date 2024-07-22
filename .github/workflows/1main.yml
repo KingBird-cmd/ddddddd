@@ -1,0 +1,47 @@
+name: Build DLL
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Create project directory
+        run: mkdir -p decontaPlugin
+
+      - name: Copy source file
+        run: cp decontaPlugin.cs decontaPlugin/
+
+      - name: Create project file
+        run: |
+          dotnet new classlib -o decontaPlugin
+          cp decontaPlugin.cs decontaPlugin/decontaPlugin.cs
+          cd decontaPlugin
+          dotnet add package Microsoft.NET.Test.Sdk
+
+      - name: Build project
+        run: dotnet build decontaPlugin/decontaPlugin.csproj --configuration Release
+
+      - name: Publish DLL
+        run: dotnet publish decontaPlugin/decontaPlugin.csproj --configuration Release --output ./publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiled-dll
+          path: ./publish
